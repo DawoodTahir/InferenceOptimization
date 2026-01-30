@@ -4,21 +4,34 @@ from abc import ABC, abstractmethod
 from typing import AsyncGenerator,Dict,Any,Optional
 import logging
 import time
+from load import load
 logging.basicConfig(level=logging.INFO)
 logger=logging.getLogger("Inference_Optimization")
-def get_engine(model_path: str):
-    engine_type=os.getenv("ENGINE_TYPE", "vllm").lower()
-    if engine_type=="vllm":
-        return VLLMEngine(model_path)
-    elif engine_type=="sglang":
-        return LlamaEngine(model_path)
-    else:
-        raise ValueError(f"Unknown engine type: {engine_type}")
 
+
+class get_engine:
+    def __init__(self, path: str):
+
+        self.path=path
+
+    def __call__(self):
+        engine_type=os.getenv("ENGINE_TYPE", "vllm").lower()
+        if engine_type=="vllm":
+            return VLLMEngine(self.path)
+        elif engine_type=="sglang":
+            return SGLangEngine(self.path)
+        else:
+            raise ValueError(f"Unknown engine type: {engine_type}")
+    
+        model, tokenizer = load()
+
+        return model, tokenizer
+
+    
 
 class BaseLLMEngine(ABC):
     @abstractmethod
-    async def generate(self, prompot:str, sampling_params, request_id):
+    async def generate(self, prompt:str, sampling_params, request_id):
         logger.info("Generating response for request_id: %s", request_id)
         raise NotImplementedError
 
@@ -34,7 +47,7 @@ class VLLMEngine(BaseLLMEngine):
         self.engine_args =AsyncEngineArgs(model_path=model_path,
         gpu_memory_utilization=0.90)
         
-        ##laoding engine , warming up GPU , loading kernels and loading model
+        ##loading engine , warming up GPU , loading kernels and loading model
         self.engine = AsyncEngine.from_engine_args(self.engine_args)
 
     async def generate(self,prompt:str,sampling_params, request_id):
@@ -61,24 +74,28 @@ class VLLMEngine(BaseLLMEngine):
 class SGLangEngine(BaseLLMEngine):
     def __init__(self, model_path: str):
         logger.info("Initializing SGLangEngine")
-        from sglang import SGLang
-        from sglang.srt.server_args import server_args
+        from sglang.srt.server_args import ServerArgs
         from sglang.srt.engine import Engine
 
+        self.server_args = ServerArgs(
+            model_path=model_path,
+            server_model_name="sglang-model",
+            ##Optimizaton work
+            disable_radix_cache=False,
+            chunked_prefill_size=4096,
+            mem_fraction_static=0.9,
+            port=30000
+        )
 
-        self.server_args = ServerArgs(model_path=model_path,server_model_name ="sglang-model",
+        ##Load Engine
+        self.Engine = Engine(server_args=self.server_args)
 
-        ##Optimizaton work
-        disable_radix_cache=False,
-        chunked_prefill_size=4096,
-        mem_fraction_static = 0.9,
-        port = 30000)
-
-        self.Engine = Engine.from_engine_args(self.server_args)
-
-    async def generate(self, prompt:str, sampling_params, request_id):
+    async def generate(self, prompt: str, sampling_params, request_id):
         logger.info("Generating response for request_id: %s", request_id)
-        sglang_params = SampingParams(**sampling_params)
+        # Import SamplingParams correctly
+        from sglang.srt.sampling_params import SamplingParams
+        
+        sglang_params = SamplingParams(**sampling_params)
         result_generator = self.Engine.async_generate(prompt, sglang_params, request_id)
         ttft = None
         start= time.perf_counter()
@@ -86,7 +103,7 @@ class SGLangEngine(BaseLLMEngine):
             if ttft is None:
                 ttft =time.perf_counter()
             ##returns the result while streaming
-            yield output["text"]
+            yield results["text"]
 
         end = time.perf_counter()
 
