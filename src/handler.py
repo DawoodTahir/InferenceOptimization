@@ -19,10 +19,16 @@ logger = logging.getLogger('Logger')
 #load the model
 output_dir = '/workspace/InferenceOptimization/src/weights'
 if not os.listdir(output_dir):
-  load(output_dir)
+  try:
+    load(output_dir)
+    logger.info('Weights Loaded')
+  except Exception as e:
+    logger.info(f"Unable to load weights due to {e}")
+else:
+  logger.info("No directory found")
 
 engine = get_engine(output_dir)
-ADMIN_KEY = os.environ.get("ADMIN_KEY", "dawood123")
+engine = engine()
 
 cw = boto3.client('cloudwatch',region_name = 'us-east-1')
 def metric(duration, tokens):
@@ -75,19 +81,17 @@ async def Inference(job):
       full_text = ""
       token_count = 0
 
-      async for chunk in engine.generate(input,params,response_id):
+      async for chunk in engine.generate(user_input,params,response_id):
         full_text+= chunk
       
         token_count += 1
 
 
-      duration. = time.time() - start_time
-      LATENCY_HISTOGRAM.observe(duration)
-      TOKEN_COUNTER.inc(token_count)
+      duration = time.time() - start_time
       
       return {'results' : full_text, 'status': "200"}
     else:
-      continue
+      pass
   except Exception as e:
     logger.info(f'Inference Error {e}')
     
