@@ -60,7 +60,7 @@ def metric(duration, tokens):
 
 async def Inference(job):
   global engine 
-  response_id = int(uuid.uuid4())
+  response_id = int(uuid.uuid4().int)
   try:
 
     
@@ -81,7 +81,7 @@ async def Inference(job):
       full_text = ""
       token_count = 0
 
-      async for chunk in engine.generate(user_input,params,response_id):
+      async for chunk in engine.generate(prompt,params,response_id):
         full_text+= chunk
       
         token_count += 1
