@@ -1,29 +1,33 @@
-# 1. Base Image
+# 1. Base Image (Keep the safe CUDA 12.4 version)
 FROM lmsysorg/sglang:v0.4.7.post1-cu124
 
-# 2. Switch to Root to allow installing system tools
+# 2. Switch to Root
 USER root
 
-# 3. Install System Dependencies
-# We install 'git' and 'build-essential' to fix the "git not found" and compile errors.
-# We also clean up immediately to keep the layer small.
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends git build-essential python3-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-# 4. Work Directory
+# 3. Work Directory
 WORKDIR /app
 
-# 5. Install Python Dependencies
-# CHANGE 1: We skipped "pip install --upgrade pip" because it was crashing.
-# CHANGE 2: We use "python3 -m pip" which is safer than just "pip".
-RUN python3 -m pip install --no-cache-dir fastapi uvicorn prometheus_client
+# 4. Install System Tools (git + venv)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git python3-venv && \
+    rm -rf /var/lib/apt/lists/*
 
-# 6. Copy Source Code
+# 5. Create a Virtual Environment
+# We create a folder called 'venv' to hold our new packages
+RUN python3 -m venv /app/venv
+
+# 6. Install Dependencies into the Virtual Environment
+# We use /app/venv/bin/pip to ensure we install HERE, not in the locked system python.
+RUN /app/venv/bin/pip install --no-cache-dir fastapi uvicorn prometheus_client
+
+# 7. Copy Source Code
 COPY . /app
 
-# 7. Expose Port
+# 8. Expose Port
 EXPOSE 8000
 
-# 8. Command
-CMD ["python3", "src/server.py"]
+# 9. Command
+# CRITICAL: We use the python inside the venv to run the server.
+# This python has access to FastAPI (in venv) AND the system packages (SGLang) via site-packages.
+ENV PYTHONPATH="/app:/app/venv/lib/python3.10/site-packages"
+CMD ["/app/venv/bin/python", "src/server.py"]
