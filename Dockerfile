@@ -1,5 +1,4 @@
-FROM lmsysorg/sglang:latest
-# 2. Work Directory
+FROM lmsysorg/sglang:v0.4.7.post1-cu124# 2. Work Directory
 WORKDIR /app
 # 3. Copy our source code
 # This takes your local 'src' folder and puts it inside the container so we can run it.
