@@ -1,27 +1,31 @@
-# 1. Base Image (Keep the safe CUDA 12.4 version)
+# 1. Base Image
 FROM lmsysorg/sglang:v0.4.7.post1-cu124
 
-# 2. Work Directory
+# 2. CRITICAL FIX: Switch to Root User
+# This grants permission to install system packages and upgrade pip.
+USER root
+
+# 3. Work Directory
 WORKDIR /app
 
-# 3. Copy source code
-COPY . /app
-
-# 4. CRITICAL FIX: Install System Build Tools
-# We install 'git', 'gcc' (build-essential), and 'python3-dev' so pip can compile anything it needs.
+# 4. Install System Dependencies
+# We install 'git' (to fix the git warning) and 'build-essential' (to fix pip compile errors).
 RUN apt-get update && \
     apt-get install -y --no-install-recommends git build-essential python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
-# 5. Upgrade pip just in case (Good practice)
-RUN pip install --upgrade pip
+# 5. Upgrade pip (Now successful because we are root)
+RUN pip install --upgrade pip --no-cache-dir
 
 # 6. Install Python Dependencies
-# Now that we have git and gcc, this will succeed even if it needs to compile something.
 RUN pip install --no-cache-dir fastapi uvicorn prometheus_client
 
-# 7. Expose Port
+# 7. Copy Source Code
+# (Moved after dependency install so we can cache the layers above)
+COPY . /app
+
+# 8. Expose Port
 EXPOSE 8000
 
-# 8. Command
+# 9. Command
 CMD ["python3", "src/server.py"]
