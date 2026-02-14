@@ -6,7 +6,7 @@ WORKDIR /app
 COPY . /app
 # 4. Install FastAPI dependencies
 # SGLang handles the heavy lifting, but we need FastAPI to expose our custom endpoints.
-RUN pip install "fastapi[all]" uvicorn prometheus_client
+RUN pip install --no-cache-dir fastapi uvicorn prometheus_client
 # 5. Expose the port
 EXPOSE 8000
 # 6. Command
