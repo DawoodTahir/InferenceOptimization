@@ -13,14 +13,13 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # 5. Create a Virtual Environment with System Packages Access
-# CRITICAL: We add '--system-site-packages' so this venv can see the 
-# PyTorch and SGLang installed in the base image.
 RUN python3 -m venv /app/venv --system-site-packages
 
-# 6. Install Unsloth and Server Dependencies
-# We use --no-deps for Unsloth to prevent it from breaking the existing PyTorch.
-# We explicitly install "unsloth_zoo" as well, which is often needed.
-RUN /app/venv/bin/pip install --no-cache-dir "unsloth[cu124] @ git+https://github.com/unslothai/unsloth.git" \
+# 6. Install Dependencies (FIXED)
+# We install unsloth_zoo explicitly, then unsloth, then the server tools.
+RUN /app/venv/bin/pip install --no-cache-dir --upgrade pip && \
+    /app/venv/bin/pip install --no-cache-dir "unsloth_zoo>=0.0.1" && \
+    /app/venv/bin/pip install --no-cache-dir "unsloth[cu124] @ git+https://github.com/unslothai/unsloth.git" \
     fastapi uvicorn prometheus_client
 
 # 7. Copy Source Code
@@ -30,6 +29,6 @@ COPY . /app
 EXPOSE 8000
 
 # 9. Command
-# We use the python inside the venv to run the server.
+# Ensure we use the venv python which has unsloth_zoo installed
 ENV PYTHONPATH="/app:/app/venv/lib/python3.10/site-packages"
 CMD ["/app/venv/bin/python", "src/server.py"]
