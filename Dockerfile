@@ -1,14 +1,18 @@
-FROM lmsysorg/sglang:v0.4.7.post1-cu124
+FROM python:3.12-slim
+
+# Install system dependencies needed for SGLang (CUDA/Build tools)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-# 3. Copy our source code
-# This takes your local 'src' folder and puts it inside the container so we can run it.
-COPY . /app
-# 4. Install FastAPI dependencies
-# SGLang handles the heavy lifting, but we need FastAPI to expose our custom endpoints.
-RUN pip install --no-cache-dir fastapi uvicorn prometheus_client
-# 5. Expose the port
-EXPOSE 8000
-# 6. Command
-# We start our own server wrapper, which will initialize the SGLang engine internally.
-CMD ["python3", "src/server.py"]
+
+# 1. Create the virtual environment
+RUN python -m venv /opt/venv
+# 2. Add it to the PATH so all subsequent commands use it
+ENV PATH="/opt/venv/bin:$PATH"
+
+# 3. Install SGLang and dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir "sglang[all]>=0.4.0" fastapi uvicorn prometheus_client
