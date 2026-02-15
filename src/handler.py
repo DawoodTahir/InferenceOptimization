@@ -16,25 +16,21 @@ logger = logging.getLogger('Logger')
 # We wrap this in a function or try/except to catch startup errors
 engine = None
 cw = None
-
+MODEL_PATH = "/runpod-volume"
 try:
-    # 1. Setup Directories
-    output_dir = os.getenv("MODEL_DIR", "/runpod-volume/weights") 
-    if not os.path.exists(output_dir):
-        output_dir = "/app/weights" 
-        os.makedirs(output_dir, exist_ok=True)
+    
         
     # 2. Load Weights (Check if this is taking too long!)
-    if not os.listdir(output_dir):
-        logger.info(f"Downloading weights to {output_dir}...")
-        load(output_dir)
+    if not os.listdir(MODEL_PATH):
+        logger.info(f"Downloading weights to {MODEL_PATH}...")
+        load(MODEL_PATH)
         logger.info('Weights Downloaded/Loaded')
     else:
         logger.info("Weights directory found, skipping download.")
 
     # 3. Initialize Engine
     logger.info("Initializing Engine...")
-    engine_builder = get_engine(output_dir)
+    engine_builder = get_engine(MODEL_PATH)
     engine = engine_builder() # Load model to GPU
     logger.info("Engine Started Successfully.")
 
