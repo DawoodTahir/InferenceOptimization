@@ -6,7 +6,7 @@ COPY . /app
 
 # Expose the port
 EXPOSE 8000
+RUN python3 -m pip install --no-cache-dir runpod
 
-# Run your server
-# Make sure your server points to the /runpod-volume/my-model path!
+
 CMD ["python3", "src/handler.py"]
