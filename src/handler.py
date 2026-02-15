@@ -30,7 +30,7 @@ try:
 
     # 3. Initialize Engine
     logger.info("Initializing Engine...")
-    engine_builder = get_engine(MODEL_PATH)
+    engine_builder = get_engine(sglang)
     engine = engine_builder() # Load model to GPU
     logger.info("Engine Started Successfully.")
 
