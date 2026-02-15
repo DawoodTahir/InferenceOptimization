@@ -10,9 +10,7 @@ logger=logging.getLogger("Inference_Optimization")
 
 
 class get_engine:
-    def __init__(self, path: str):
-
-        self.path=path
+    def __init__(self):
 
     def __call__(self):
         engine_type=os.getenv("ENGINE_TYPE", "sglang").lower()
@@ -23,9 +21,8 @@ class get_engine:
         else:
             raise ValueError(f"Unknown engine type: {engine_type}")
     
-        model, tokenizer = load()
 
-        return model, tokenizer
+        return True
 
     
 
