@@ -1,6 +1,6 @@
 import torch
 import sglang 
-def load():
+def load(model_path):
     max_seq_length = 2048
     dtype = None
     load_in_4bit = True 
