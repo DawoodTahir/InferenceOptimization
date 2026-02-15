@@ -15,7 +15,7 @@ class get_engine:
         self.path=path
 
     def __call__(self):
-        engine_type=os.getenv("ENGINE_TYPE", "vllm").lower()
+        engine_type=os.getenv("ENGINE_TYPE", "sglang").lower()
         if engine_type=="vllm":
             return VLLMEngine(self.path)
         elif engine_type=="sglang":
