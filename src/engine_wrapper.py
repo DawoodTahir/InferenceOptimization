@@ -10,8 +10,6 @@ logger=logging.getLogger("Inference_Optimization")
 
 
 class get_engine:
-    def __init__(self):
-
     def __call__(self):
         engine_type=os.getenv("ENGINE_TYPE", "sglang").lower()
         if engine_type=="vllm":
